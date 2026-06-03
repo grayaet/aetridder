@@ -1,4 +1,4 @@
-# Reddit RU Reader 001
+# Reddit Reader 001
 
 Shipyard-local candidate private single-user Reddit thread reader for iPhone. The app receives one public Reddit or redd.it URL from an iOS Shortcut, creates a latest-job processing task, extracts public thread structure with Playwright/Chromium best effort, translates the structured JSON into Russian through Codex CLI using `gpt-5.5` only, and renders a private mobile reader page at `/t/:jobId`.
 
