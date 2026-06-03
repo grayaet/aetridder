@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aetridder.extracted-thread.schema.json",
+  "title": "Aetridder extracted thread",
+  "type": "object",
+  "required": ["schemaVersion", "sourceUrl", "normalizedUrl", "finalUrlAfterRedirect", "extractedAt", "post", "comments", "warningCodes"],
+  "properties": {
+    "schemaVersion": { "const": "aetridder.extracted-thread.v1" },
+    "sourceUrl": { "type": "string" },
+    "normalizedUrl": { "type": "string" },
+    "finalUrlAfterRedirect": { "type": "string" },
+    "extractedAt": { "type": "string" },
+    "post": { "$ref": "#/$defs/post" },
+    "comments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/comment" }
+    },
+    "warningCodes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["partial_comments", "truncated_comments"] },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "post": {
+      "type": "object",
+      "required": ["id", "title", "bodyMarkdown", "author", "authorProfileUrl", "score", "timestamp", "metadata"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "minLength": 1 },
+        "bodyMarkdown": { "type": "string" },
+        "author": { "type": "string" },
+        "authorProfileUrl": { "type": ["string", "null"] },
+        "score": { "type": ["string", "number", "null"] },
+        "timestamp": { "type": ["string", "null"] },
+        "metadata": { "type": "object" }
+      }
+    },
+    "comment": {
+      "type": "object",
+      "required": ["id", "parentId", "order", "depth", "author", "authorProfileUrl", "score", "timestamp", "bodyMarkdown", "metadata"],
+      "properties": {
+        "id": { "type": "string" },
+        "parentId": { "type": ["string", "null"] },
+        "order": { "type": "integer", "minimum": 0 },
+        "depth": { "type": "integer", "minimum": 0 },
+        "author": { "type": "string" },
+        "authorProfileUrl": { "type": ["string", "null"] },
+        "score": { "type": ["string", "number", "null"] },
+        "timestamp": { "type": ["string", "null"] },
+        "bodyMarkdown": { "type": "string" },
+        "metadata": { "type": "object" }
+      }
+    }
+  }
+}
+

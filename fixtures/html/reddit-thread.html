@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Fixture Reddit Thread</title>
+</head>
+<body>
+  <shreddit-post id="t3_fixture">
+    <a href="https://www.reddit.com/user/fixture_author/">u/fixture_author</a>
+    <h1>Fixture English title</h1>
+    <div slot="text-body">Fixture English body with Markdown-like **bold** text.</div>
+    <faceplate-number>19</faceplate-number>
+    <time datetime="2026-06-02T16:00:00.000Z">now</time>
+  </shreddit-post>
+  <section>
+    <shreddit-comment id="t1_fixture_a" depth="0">
+      <a href="https://www.reddit.com/user/fixture_one/">u/fixture_one</a>
+      <div slot="comment">Fixture English comment one.</div>
+      <div id="t1_fixture_a-comment-rtjson-content">Fixture English comment one.</div>
+      <div id="t1_fixture_a-post-rtjson-content">Fixture English comment one.</div>
+      <faceplate-number>5</faceplate-number>
+      <time datetime="2026-06-02T16:05:00.000Z">5 min</time>
+    </shreddit-comment>
+    <shreddit-comment id="t1_fixture_b" depth="1" parentid="t1_fixture_a">
+      <a href="https://www.reddit.com/user/fixture_two/">u/fixture_two</a>
+      <div slot="comment">Fixture nested English reply.</div>
+      <div id="t1_fixture_b-comment-rtjson-content">Fixture nested English reply.</div>
+      <div id="t1_fixture_b-post-rtjson-content">Fixture nested English reply.</div>
+      <faceplate-number>2</faceplate-number>
+      <time datetime="2026-06-02T16:06:00.000Z">6 min</time>
+    </shreddit-comment>
+  </section>
+</body>
+</html>
+

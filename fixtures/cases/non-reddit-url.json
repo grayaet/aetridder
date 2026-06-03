@@ -1,0 +1,9 @@
+{
+  "name": "non-Reddit URL rejected",
+  "requestBody": {
+    "url": "https://example.com/r/test/comments/demo"
+  },
+  "expectedStatus": 400,
+  "expectedErrorCode": "non_reddit_url"
+}
+

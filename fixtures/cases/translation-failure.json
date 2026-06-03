@@ -1,0 +1,6 @@
+{
+  "name": "translation failure returns clear error",
+  "expectedStatus": "translation_failed",
+  "expectedErrorCode": "codex_nonzero_exit"
+}
+

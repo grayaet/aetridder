@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "aetridder.translated-thread.v1",
+  "language": "ru",
+  "translatedAt": "2026-06-02T18:01:00.000Z",
+  "sourceUrl": "https://www.reddit.com/r/test/comments/demo/english_title/",
+  "normalizedUrl": "https://www.reddit.com/r/test/comments/demo/english_title/",
+  "finalUrlAfterRedirect": "https://www.reddit.com/r/test/comments/demo/english_title/",
+  "post": {
+    "id": "t3_demo",
+    "title": "Русский заголовок для проверки",
+    "bodyMarkdown": "Русский текст с **Markdown** и [ссылкой](https://example.com).",
+    "author": "sample_author",
+    "authorProfileUrl": "https://www.reddit.com/user/sample_author/",
+    "score": "42",
+    "timestamp": "2026-06-02T17:00:00.000Z",
+    "metadata": {
+      "subreddit": "test",
+      "isSubmitter": null,
+      "extractionSelector": null
+    }
+  },
+  "comments": [
+    {
+      "id": "t1_alpha",
+      "parentId": "t3_demo",
+      "order": 0,
+      "depth": 0,
+      "author": "commenter_one",
+      "authorProfileUrl": "https://www.reddit.com/user/commenter_one/",
+      "score": "7",
+      "timestamp": "2026-06-02T17:10:00.000Z",
+      "bodyMarkdown": "Первый русский комментарий.",
+      "metadata": {
+        "subreddit": null,
+        "isSubmitter": false,
+        "extractionSelector": null
+      }
+    },
+    {
+      "id": "t1_beta",
+      "parentId": "t1_alpha",
+      "order": 1,
+      "depth": 1,
+      "author": "commenter_two",
+      "authorProfileUrl": "https://www.reddit.com/user/commenter_two/",
+      "score": "3",
+      "timestamp": "2026-06-02T17:12:00.000Z",
+      "bodyMarkdown": "Вложенный русский ответ.",
+      "metadata": {
+        "subreddit": null,
+        "isSubmitter": false,
+        "extractionSelector": null
+      }
+    }
+  ],
+  "warningCodes": []
+}
+

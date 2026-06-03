@@ -1,0 +1,6 @@
+{
+  "name": "partial extraction is ready_with_warning",
+  "warningCodes": ["partial_comments"],
+  "expectedStatus": "ready_with_warning"
+}
+

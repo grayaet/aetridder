@@ -1,0 +1,6 @@
+{
+  "name": "missing GPT-5.5 returns clear translation error",
+  "expectedStatus": "translation_failed",
+  "expectedErrorCode": "missing_gpt55"
+}
+

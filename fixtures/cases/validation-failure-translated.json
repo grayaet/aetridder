@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "aetridder.translated-thread.v1",
+  "language": "ru",
+  "translatedAt": "2026-06-02T18:02:00.000Z",
+  "post": {
+    "id": "wrong_post_id",
+    "title": "Неверный перевод",
+    "bodyMarkdown": "Метаданные не совпадают.",
+    "author": "sample_author",
+    "authorProfileUrl": "https://www.reddit.com/user/sample_author/",
+    "score": "42",
+    "timestamp": "2026-06-02T17:00:00.000Z",
+    "metadata": {
+      "subreddit": "test"
+    }
+  },
+  "comments": [],
+  "warningCodes": []
+}
+

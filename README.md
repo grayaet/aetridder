@@ -1,8 +1,8 @@
-# Reddit Reader 001
+# Aetridder
 
-Shipyard-local candidate private single-user Reddit thread reader for iPhone. The app receives one public Reddit or redd.it URL from an iOS Shortcut, creates a latest-job processing task, extracts public thread structure with Playwright/Chromium best effort, translates the structured JSON into Russian through Codex CLI using `gpt-5.5` only, and renders a private mobile reader page at `/t/:jobId`.
+Private single-user Reddit thread reader for iPhone. The app receives one public Reddit or redd.it URL from an iOS Shortcut, creates a latest-job processing task, extracts public thread structure with Playwright/Chromium best effort, translates the structured JSON into Russian through Codex CLI using `gpt-5.5` only, and renders a private mobile reader page at `/t/:jobId`.
 
-This is a candidate app for local manual review. It is not deployed, not public, not adopted by any project, and not a permanent Reddit archive.
+This is a candidate app for local manual review. It is not deployed as a public service, not adopted by any project, and not a permanent Reddit archive.
 
 ## Scope
 
@@ -40,7 +40,7 @@ Local `live_reddit_proof` does not prove isolated VPS production viability. Befo
 2. Create local environment values from `.env.example`. Set a real local value for:
 
    ```text
-   REDDIT_RU_API_TOKEN
+   AETRIDDER_API_TOKEN
    ```
 
 3. Start the local server:
@@ -52,7 +52,7 @@ Local `live_reddit_proof` does not prove isolated VPS production viability. Befo
 4. Submit a thread URL:
 
    ```powershell
-   $headers = @{ Authorization = "Bearer <REDDIT_RU_API_TOKEN>" }
+   $headers = @{ Authorization = "Bearer <AETRIDDER_API_TOKEN>" }
    $body = @{ url = "https://www.reddit.com/r/example/comments/example/example/" } | ConvertTo-Json
    Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:4173/api/threads" -Headers $headers -Body $body -ContentType "application/json"
    ```
@@ -61,7 +61,7 @@ The response includes `jobId` and `viewUrl`. Open `viewUrl` on the phone or desk
 
 ## iOS Shortcut Setup
 
-Create a Shortcut named `Reddit RU` with these actions:
+Create a Shortcut named `Aetridder` with these actions:
 
 1. Receive URLs from Share Sheet.
 2. Get the first shared URL.
@@ -76,7 +76,7 @@ Create a Shortcut named `Reddit RU` with these actions:
 6. Add header:
 
    ```text
-   Authorization: Bearer <REDDIT_RU_API_TOKEN>
+   Authorization: Bearer <AETRIDDER_API_TOKEN>
    ```
 
 7. Get `viewUrl` from the JSON response.
@@ -86,8 +86,8 @@ The Shortcut should not put the token in the URL. The reader page uses the ungue
 
 ## Auth And Privacy Model
 
-- `POST /api/threads` requires `Authorization: Bearer <REDDIT_RU_API_TOKEN>`.
-- Diagnostics endpoints require `Authorization: Bearer <REDDIT_RU_DIAGNOSTICS_TOKEN>` when configured, otherwise the same API token.
+- `POST /api/threads` requires `Authorization: Bearer <AETRIDDER_API_TOKEN>`.
+- Diagnostics endpoints require `Authorization: Bearer <AETRIDDER_DIAGNOSTICS_TOKEN>` when configured, otherwise the same API token.
 - `/t/:jobId` is protected only by an unguessable random `jobId` for this local MVP.
 - Tokens and full view URLs are not logged. Worker logs and diagnostic log tails redact Bearer values, configured tokens, and full `/t/:jobId` URLs.
 
@@ -196,3 +196,4 @@ The mobile check uses a `390x844` viewport when Playwright Chromium is available
 - Translation contract: `docs/translation-contract.md`
 - JSON schemas: `schemas/`
 - Fixtures: `fixtures/`
+

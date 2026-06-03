@@ -1,0 +1,6 @@
+{
+  "name": "new job replaces active job",
+  "expectedOldStatus": "replaced",
+  "expectedPlaceholder": "Задача заменена"
+}
+

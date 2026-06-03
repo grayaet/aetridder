@@ -1,0 +1,9 @@
+{
+  "name": "invalid URL rejected",
+  "requestBody": {
+    "url": "not a url"
+  },
+  "expectedStatus": 400,
+  "expectedErrorCode": "invalid_url"
+}
+

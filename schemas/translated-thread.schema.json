@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aetridder.translated-thread.schema.json",
+  "title": "Aetridder translated thread",
+  "type": "object",
+  "required": ["schemaVersion", "language", "translatedAt", "sourceUrl", "normalizedUrl", "finalUrlAfterRedirect", "post", "comments", "warningCodes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "aetridder.translated-thread.v1" },
+    "language": { "type": "string", "const": "ru" },
+    "translatedAt": { "type": "string" },
+    "sourceUrl": { "type": "string" },
+    "normalizedUrl": { "type": "string" },
+    "finalUrlAfterRedirect": { "type": "string" },
+    "post": { "$ref": "#/$defs/post" },
+    "comments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/comment" }
+    },
+    "warningCodes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["partial_comments", "truncated_comments"] }
+    }
+  },
+  "$defs": {
+    "post": {
+      "type": "object",
+      "required": ["id", "title", "bodyMarkdown", "author", "authorProfileUrl", "score", "timestamp", "metadata"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string", "minLength": 1 },
+        "bodyMarkdown": { "type": "string" },
+        "author": { "type": "string" },
+        "authorProfileUrl": { "type": ["string", "null"] },
+        "score": { "type": ["string", "number", "null"] },
+        "timestamp": { "type": ["string", "null"] },
+        "metadata": { "$ref": "#/$defs/metadata" }
+      }
+    },
+    "comment": {
+      "type": "object",
+      "required": ["id", "parentId", "order", "depth", "author", "authorProfileUrl", "score", "timestamp", "bodyMarkdown", "metadata"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "parentId": { "type": ["string", "null"] },
+        "order": { "type": "integer", "minimum": 0 },
+        "depth": { "type": "integer", "minimum": 0 },
+        "author": { "type": "string" },
+        "authorProfileUrl": { "type": ["string", "null"] },
+        "score": { "type": ["string", "number", "null"] },
+        "timestamp": { "type": ["string", "null"] },
+        "bodyMarkdown": { "type": "string", "minLength": 1 },
+        "metadata": { "$ref": "#/$defs/metadata" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subreddit", "isSubmitter", "extractionSelector"],
+      "properties": {
+        "subreddit": { "type": ["string", "null"] },
+        "isSubmitter": { "type": ["boolean", "null"] },
+        "extractionSelector": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
+
