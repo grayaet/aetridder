@@ -39,4 +39,3 @@ test("diagnostics require Bearer auth and expose read-only status fields", async
     }
   });
 });
-

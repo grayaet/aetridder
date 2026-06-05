@@ -32,7 +32,7 @@ test("new job replaces active job and stale worker output cannot publish", async
       return { thread: sampleRaw({ post: { ...sampleRaw().post, id: "t3_second", title: "Second English title" } }) };
     },
     translator: async (raw) => ({
-      thread: translatedFromRaw(raw, { title: `Перевод ${raw.post.id}` })
+      thread: translatedFromRaw(raw, { title: `Переклад ${raw.post.id}` })
     })
   }, async ({ baseUrl }) => {
     const first = await requestJson(baseUrl, "POST", "/api/threads", {
@@ -58,11 +58,10 @@ test("new job replaces active job and stale worker output cannot publish", async
 
     const oldPage = await getText(baseUrl, `/t/${first.body.jobId}`);
     assert.equal(oldPage.status, 200);
-    assert.match(oldPage.text, /Задача заменена/);
+    assert.match(oldPage.text, /Job replaced/);
 
     const newPage = await getText(baseUrl, `/t/${second.body.jobId}`);
-    assert.match(newPage.text, /Перевод t3_second/);
-    assert.doesNotMatch(newPage.text, /Перевод t3_first/);
+    assert.match(newPage.text, /Переклад t3_second/);
+    assert.doesNotMatch(newPage.text, /Переклад t3_first/);
   });
 });
-

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aetridder.extractor-request.schema.json",
+  "title": "Extractor v1 request",
+  "type": "object",
+  "required": ["protocolVersion", "jobId", "generation", "requestId", "sourceUrl", "normalizedUrl", "limits"],
+  "additionalProperties": false,
+  "properties": {
+    "protocolVersion": { "const": "extractor.v1" },
+    "jobId": { "type": "string", "minLength": 1 },
+    "generation": { "type": "integer", "minimum": 0 },
+    "requestId": { "type": "string", "minLength": 1 },
+    "sourceUrl": { "type": "string", "minLength": 1 },
+    "normalizedUrl": { "type": "string", "minLength": 1 },
+    "limits": {
+      "type": "object",
+      "required": ["maxComments", "maxPartialRequests", "timeoutMs", "maxArtifactBytes"],
+      "additionalProperties": false,
+      "properties": {
+        "maxComments": { "type": "integer", "minimum": 1 },
+        "maxPartialRequests": { "type": "integer", "minimum": 1 },
+        "timeoutMs": { "type": "integer", "minimum": 1 },
+        "maxArtifactBytes": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

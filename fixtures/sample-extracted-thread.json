@@ -12,11 +12,15 @@
     "authorProfileUrl": "https://www.reddit.com/user/sample_author/",
     "score": "42",
     "timestamp": "2026-06-02T17:00:00.000Z",
-    "metadata": {
-      "subreddit": "test",
-      "isSubmitter": null,
-      "extractionSelector": null
-    }
+      "metadata": {
+        "subreddit": "test",
+        "isSubmitter": null,
+        "extractionSelector": null,
+        "originalDomId": null,
+        "parentInferenceSource": null,
+        "parentInferenceWarning": null,
+        "duplicateMerge": null
+      }
   },
   "comments": [
     {
@@ -32,7 +36,11 @@
       "metadata": {
         "subreddit": null,
         "isSubmitter": false,
-        "extractionSelector": null
+        "extractionSelector": null,
+        "originalDomId": null,
+        "parentInferenceSource": null,
+        "parentInferenceWarning": null,
+        "duplicateMerge": null
       }
     },
     {
@@ -48,10 +56,26 @@
       "metadata": {
         "subreddit": null,
         "isSubmitter": false,
-        "extractionSelector": null
+        "extractionSelector": null,
+        "originalDomId": null,
+        "parentInferenceSource": null,
+        "parentInferenceWarning": null,
+        "duplicateMerge": null
       }
     }
   ],
-  "warningCodes": []
+  "warningCodes": [],
+  "parserMetrics": {
+    "visibleCommentCount": 2,
+    "discoveredMoreRequestCount": 0,
+    "uniqueMoreRequestCount": 0,
+    "fetchedMoreRequestCount": 0,
+    "duplicateMoreRequestCount": 0,
+    "failedMoreRequestCount": 0,
+    "unresolvedMoreRequestCount": 0,
+    "limitReached": false,
+    "extractedUniqueCommentCount": 2,
+    "maxDepthExtracted": 1,
+    "partialArtifactsCount": 0
+  }
 }
-

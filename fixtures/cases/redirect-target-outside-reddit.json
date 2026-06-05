@@ -4,4 +4,3 @@
   "finalUrlAfterRedirect": "https://example.com/not-reddit",
   "expectedErrorCode": "redirect_target_not_reddit"
 }
-

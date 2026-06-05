@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "aetridder.extracted-thread.schema.json",
-  "title": "Aetridder extracted thread",
+  "title": "Reddit Reader extracted thread",
   "type": "object",
-  "required": ["schemaVersion", "sourceUrl", "normalizedUrl", "finalUrlAfterRedirect", "extractedAt", "post", "comments", "warningCodes"],
+  "required": ["schemaVersion", "sourceUrl", "normalizedUrl", "finalUrlAfterRedirect", "extractedAt", "post", "comments", "warningCodes", "parserMetrics"],
   "properties": {
     "schemaVersion": { "const": "aetridder.extracted-thread.v1" },
     "sourceUrl": { "type": "string" },
@@ -19,7 +19,8 @@
       "type": "array",
       "items": { "type": "string", "enum": ["partial_comments", "truncated_comments"] },
       "uniqueItems": true
-    }
+    },
+    "parserMetrics": { "$ref": "#/$defs/parserMetrics" }
   },
   "$defs": {
     "post": {
@@ -33,7 +34,7 @@
         "authorProfileUrl": { "type": ["string", "null"] },
         "score": { "type": ["string", "number", "null"] },
         "timestamp": { "type": ["string", "null"] },
-        "metadata": { "type": "object" }
+        "metadata": { "$ref": "#/$defs/metadata" }
       }
     },
     "comment": {
@@ -49,9 +50,51 @@
         "score": { "type": ["string", "number", "null"] },
         "timestamp": { "type": ["string", "null"] },
         "bodyMarkdown": { "type": "string" },
-        "metadata": { "type": "object" }
+        "metadata": { "$ref": "#/$defs/metadata" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "subreddit": { "type": ["string", "null"] },
+        "isSubmitter": { "type": ["boolean", "null"] },
+        "extractionSelector": { "type": ["string", "null"] },
+        "originalDomId": { "type": ["string", "null"] },
+        "parentInferenceSource": { "type": ["string", "null"] },
+        "parentInferenceWarning": { "type": ["string", "null"] },
+        "duplicateMerge": { "type": ["string", "null"] }
+      }
+    },
+    "parserMetrics": {
+      "type": "object",
+      "required": [
+        "visibleCommentCount",
+        "totalCommentCount",
+        "discoveredMoreRequestCount",
+        "uniqueMoreRequestCount",
+        "fetchedMoreRequestCount",
+        "duplicateMoreRequestCount",
+        "failedMoreRequestCount",
+        "unresolvedMoreRequestCount",
+        "limitReached",
+        "extractedUniqueCommentCount",
+        "maxDepthExtracted",
+        "partialArtifactsCount"
+      ],
+      "properties": {
+        "visibleCommentCount": { "type": "integer", "minimum": 0 },
+        "totalCommentCount": { "type": "integer", "minimum": 0 },
+        "discoveredMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "uniqueMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "fetchedMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "duplicateMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "failedMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "unresolvedMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "limitReached": { "type": "boolean" },
+        "extractedUniqueCommentCount": { "type": "integer", "minimum": 0 },
+        "maxDepthExtracted": { "type": "integer", "minimum": 0 },
+        "partialArtifactsCount": { "type": "integer", "minimum": 0 }
       }
     }
   }
 }
-

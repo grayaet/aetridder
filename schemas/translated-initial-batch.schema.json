@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aetridder.translated-initial-batch.schema.json",
+  "title": "Reddit Reader translated initial post and comment batch",
+  "type": "object",
+  "required": ["schemaVersion", "language", "translatedAt", "post", "batchIndex", "totalBatches", "comments", "warningCodes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "aetridder.translated-initial-batch.v1" },
+    "language": { "type": "string" },
+    "translatedAt": { "type": "string" },
+    "post": { "$ref": "#/$defs/post" },
+    "batchIndex": { "type": "integer" },
+    "totalBatches": { "type": "integer" },
+    "comments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/comment" }
+    },
+    "warningCodes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["partial_comments", "truncated_comments", "partial_translation"] }
+    }
+  },
+  "$defs": {
+    "post": {
+      "type": "object",
+      "required": ["id", "title", "bodyMarkdown"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "bodyMarkdown": { "type": "string" }
+      }
+    },
+    "comment": {
+      "type": "object",
+      "required": ["id", "parentId", "order", "depth", "bodyMarkdown"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "parentId": { "type": ["string", "null"] },
+        "order": { "type": "integer" },
+        "depth": { "type": "integer" },
+        "bodyMarkdown": { "type": "string" }
+      }
+    }
+  }
+}

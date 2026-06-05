@@ -2,16 +2,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const { loadConfig } = require("../src/config");
-const { extractThreadFromPage } = require("../src/extractor");
-const { validateFinalRedditUrl } = require("../src/url");
+const { BROWSER_LIKE_HEADERS, extractWithPlaywright, looksLikeRedditVerificationPage } = require("../src/extractor");
 const { validateExtractedThread } = require("../src/validation");
 const { appRoot, apiToken } = require("./helpers");
 
-const browserLikeHeaders = Object.freeze({
-  "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125 Safari/537.36 Aetridder/0.1",
-  "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-  "accept-language": "en-US,en;q=0.9"
-});
+const browserLikeHeaders = BROWSER_LIKE_HEADERS;
 
 const jsonHeaders = Object.freeze({
   "user-agent": browserLikeHeaders["user-agent"],
@@ -27,12 +22,21 @@ function snippet(text, limit = 500) {
 }
 
 function looksLikeVerificationPage(text) {
-  return /please wait for verification|js_challenge|network policy|blocked|cloudflare/i.test(String(text || ""));
+  return looksLikeRedditVerificationPage("", text);
 }
 
 function expectedThreadId(url) {
   const match = String(url).match(/\/comments\/([^/]+)/i);
   return match ? `t3_${match[1]}` : null;
+}
+
+function expectedSubreddit(url) {
+  const match = String(url).match(/\/r\/([^/?#]+)/i);
+  return match ? match[1] : null;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function classifyStatus(proof) {
@@ -128,7 +132,7 @@ async function fetchProbe(name, url, headers = browserLikeHeaders) {
 }
 
 async function oauthProbe(mode, url) {
-  if (process.env.AETRIDDER_LIVE_OAUTH_PROBE !== "1") {
+  if (process.env.REDDIT_READER_LIVE_OAUTH_PROBE !== "1") {
       return {
         name: mode,
         runStatusLabel: "skipped_due_to_host_limit",
@@ -136,7 +140,7 @@ async function oauthProbe(mode, url) {
       reason: "OAuth/API is not selected, preferred, implemented, or configured by this MVP. Any OAuth/API production mode or credentialed probe requires a separate owner-confirmed work order."
     };
   }
-  const tokenPresent = Boolean(process.env.AETRIDDER_OAUTH_BEARER_TOKEN);
+  const tokenPresent = Boolean(process.env.REDDIT_READER_OAUTH_BEARER_TOKEN);
   if (!tokenPresent) {
     return {
       name: mode,
@@ -152,7 +156,7 @@ async function oauthProbe(mode, url) {
   };
   const actualHeaders = {
     ...headers,
-    authorization: `Bearer ${process.env.AETRIDDER_OAUTH_BEARER_TOKEN}`
+    authorization: `Bearer ${process.env.REDDIT_READER_OAUTH_BEARER_TOKEN}`
   };
   const startedAt = new Date().toISOString();
   const result = {
@@ -253,7 +257,11 @@ async function playwrightListingProbe(url, config) {
     result.pageTitle = await page.title();
     result.bodySnippet = snippet(await page.locator("body").innerText({ timeout: 5000 }).catch(() => ""));
     result.verificationOrBlockPageDetected = looksLikeVerificationPage(`${result.pageTitle} ${result.bodySnippet}`);
-    result.listingVisible = /r\/IAmA|ask me anything|top posts|hot posts/i.test(`${result.pageTitle} ${result.bodySnippet}`);
+    const expected = expectedSubreddit(url);
+    const listingText = `${result.pageTitle} ${result.bodySnippet}`;
+    result.listingVisible = expected
+      ? new RegExp(`\\br/${escapeRegExp(expected)}\\b`, "i").test(listingText)
+      : /top posts|hot posts/i.test(listingText);
     result.pageFetchedOk = Boolean(result.statusCode && result.statusCode >= 200 && result.statusCode < 400);
     result.ok = result.pageFetchedOk && !result.verificationOrBlockPageDetected && result.listingVisible;
     if (!result.ok && result.verificationOrBlockPageDetected) {
@@ -301,73 +309,51 @@ async function playwrightThreadProbe(url, config, outputDir) {
     extractedPostId: null,
     requestedThreadMatched: false,
     commentCount: 0,
+    expansionMetrics: null,
     artifacts: []
   };
 
-  let chromium;
-  try {
-    ({ chromium } = require("playwright"));
-  } catch (error) {
-    result.errorClass = error.name || "require_error";
-    result.errorCode = "playwright_unavailable";
-    result.errorMessageSafe = "Playwright is not available in this environment.";
-    result.endedAt = new Date().toISOString();
-    return result;
-  }
-
-  let browser;
-  try {
-    browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage({
-      viewport: { width: 390, height: 844 },
-      userAgent: browserLikeHeaders["user-agent"],
-      extraHTTPHeaders: {
-        "accept-language": browserLikeHeaders["accept-language"]
-      }
-    });
-    const response = await page.goto(url, {
-      waitUntil: "domcontentloaded",
-      timeout: config.extractionTimeoutMs
-    });
-    result.statusCode = response ? response.status() : null;
-    await page.waitForTimeout(1200);
-    result.finalUrl = page.url();
-    result.pageTitle = await page.title();
-    result.bodySnippet = snippet(await page.locator("body").innerText({ timeout: 5000 }).catch(() => ""));
-    result.verificationOrBlockPageDetected = looksLikeVerificationPage(`${result.pageTitle} ${result.bodySnippet}`);
-    result.pageFetchedOk = Boolean(result.statusCode && result.statusCode >= 200 && result.statusCode < 400) && !result.verificationOrBlockPageDetected;
-    if (result.verificationOrBlockPageDetected) {
-      result.errorCode = "reddit_verification_or_block_page";
-      result.errorMessageSafe = "Reddit returned or retained a verification/block page for the thread.";
-      return result;
+  const readDebug = () => {
+    const debugPath = path.join(outputDir, "extractor-debug.json");
+    if (!fs.existsSync(debugPath)) {
+      return null;
     }
-
-    const finalValidation = validateFinalRedditUrl(result.finalUrl, config.allowedHosts);
-    if (!finalValidation.ok) {
-      result.errorCode = finalValidation.errorCode;
-      result.errorMessageSafe = finalValidation.errorMessageSafe;
-      return result;
-    }
-
-    const html = await page.content();
-    fs.writeFileSync(path.join(outputDir, "reddit-page.html"), html);
-    result.artifacts.push("reddit-page.html");
     try {
-      await page.screenshot({ path: path.join(outputDir, "screenshot.png"), fullPage: true });
-      result.artifacts.push("screenshot.png");
+      return JSON.parse(fs.readFileSync(debugPath, "utf8"));
     } catch (_error) {
-      // Screenshot is helpful evidence, but not required to classify the failure.
+      return null;
     }
+  };
+  const refreshArtifacts = () => {
+    if (!fs.existsSync(outputDir)) {
+      result.artifacts = [];
+      return;
+    }
+    result.artifacts = fs.readdirSync(outputDir)
+      .filter((name) => fs.statSync(path.join(outputDir, name)).isFile())
+      .sort();
+  };
 
-    const thread = await extractThreadFromPage(page, {
+  try {
+    const extracted = await extractWithPlaywright({
       jobId: "bounded-live-reddit-check",
       sourceUrl: url,
       normalizedUrl: url
-    });
-    thread.finalUrlAfterRedirect = finalValidation.normalizedUrl;
+    }, { config, workDir: outputDir, log: () => {} });
+    const thread = extracted.thread || extracted;
     fs.writeFileSync(path.join(outputDir, "thread.raw.json"), JSON.stringify(thread, null, 2));
-    result.artifacts.push("thread.raw.json");
+    refreshArtifacts();
 
+    const debug = readDebug();
+    if (debug) {
+      result.finalUrl = debug.finalUrl || thread.finalUrlAfterRedirect || null;
+      result.pageTitle = debug.pageTitle || null;
+      result.bodySnippet = debug.bodySnippet || null;
+      result.verificationOrBlockPageDetected = Boolean(debug.verificationOrBlockPageDetected);
+    } else {
+      result.finalUrl = thread.finalUrlAfterRedirect || null;
+    }
+    result.pageFetchedOk = !result.verificationOrBlockPageDetected;
     const validation = validateExtractedThread(thread, config);
     result.validationOk = validation.ok;
     result.errorCode = validation.errorCode || null;
@@ -376,20 +362,26 @@ async function playwrightThreadProbe(url, config, outputDir) {
     result.extractedPostId = validation.ok ? validation.thread.post.id : null;
     result.requestedThreadMatched = validation.ok && (!result.expectedThreadId || validation.thread.post.id === result.expectedThreadId);
     result.commentCount = validation.ok ? validation.thread.comments.length : 0;
+    result.expansionMetrics = validation.ok ? validation.thread.parserMetrics : thread.parserMetrics;
     result.ok = validation.ok && result.requestedThreadMatched;
     if (validation.ok && !result.requestedThreadMatched) {
       result.errorCode = "requested_thread_id_mismatch";
       result.errorMessageSafe = "Rendered Reddit content did not match the requested thread id.";
     }
   } catch (error) {
-    result.errorClass = error.name || "playwright_error";
-    result.errorCode = error.code || "reddit_page_load_failed";
-    result.errorMessageSafe = "Reddit page loading, rendering, or extraction failed.";
-    result.bodySnippet = result.bodySnippet || snippet(error.message);
-  } finally {
-    if (browser) {
-      await browser.close();
+    const debug = readDebug();
+    if (debug) {
+      result.finalUrl = debug.finalUrl || null;
+      result.pageTitle = debug.pageTitle || null;
+      result.bodySnippet = debug.bodySnippet || null;
+      result.verificationOrBlockPageDetected = Boolean(debug.verificationOrBlockPageDetected);
     }
+    result.errorClass = error.name || "playwright_error";
+    result.errorCode = error.errorCode || error.code || "reddit_page_load_failed";
+    result.errorMessageSafe = error.errorMessageSafe || "Reddit page loading, rendering, or extraction failed.";
+    result.bodySnippet = result.bodySnippet || snippet(error.message);
+    refreshArtifacts();
+  } finally {
     result.endedAt = new Date().toISOString();
   }
   result.runStatusLabel = runStatusLabel(result);
@@ -406,19 +398,19 @@ async function main() {
   fs.mkdirSync(outputDir, { recursive: true });
 
   const threadUrl =
-    process.env.AETRIDDER_LIVE_TEST_URL ||
+    process.env.REDDIT_READER_LIVE_TEST_URL ||
     "https://www.reddit.com/r/IAmA/comments/aunv58/im_bill_gates_cochair_of_the_bill_melinda_gates/";
   const listingUrl =
-    process.env.AETRIDDER_LIVE_LISTING_URL ||
+    process.env.REDDIT_READER_LIVE_LISTING_URL ||
     "https://www.reddit.com/r/IAmA/";
 
   const config = loadConfig({
     env: {
-      AETRIDDER_API_TOKEN: apiToken,
-      AETRIDDER_MAX_COMMENTS: "1000",
-      AETRIDDER_EXTRACTION_TIMEOUT_MS: "30000",
-      AETRIDDER_MAX_ARTIFACT_BYTES: "10485760",
-      AETRIDDER_REDACTED_LOG_TAIL_BYTES: "32768"
+      REDDIT_READER_API_TOKEN: apiToken,
+      REDDIT_READER_MAX_COMMENTS: "1000",
+      REDDIT_READER_EXTRACTION_TIMEOUT_MS: "30000",
+      REDDIT_READER_MAX_ARTIFACT_BYTES: "10485760",
+      REDDIT_READER_REDACTED_LOG_TAIL_BYTES: "32768"
     },
     storageDir: outputDir
   });
@@ -495,4 +487,3 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-

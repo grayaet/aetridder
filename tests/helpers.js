@@ -46,19 +46,19 @@ function sampleRaw(overrides = {}) {
 function translatedFromRaw(raw, options = {}) {
   return {
     schemaVersion: "aetridder.translated-thread.v1",
-    language: "ru",
+    language: options.language || "uk",
     translatedAt: "2026-06-02T18:03:00.000Z",
     sourceUrl: raw.sourceUrl,
     normalizedUrl: raw.normalizedUrl,
     finalUrlAfterRedirect: raw.finalUrlAfterRedirect,
     post: {
       ...raw.post,
-      title: options.title || "Русский заголовок для проверки",
-      bodyMarkdown: options.bodyMarkdown || "Русский текст для проверки."
+      title: options.title || "Перекладений заголовок для перевірки",
+      bodyMarkdown: options.bodyMarkdown || "Перекладений текст для перевірки."
     },
     comments: raw.comments.map((comment, index) => ({
       ...comment,
-      bodyMarkdown: `Русский комментарий ${index + 1}.`
+      bodyMarkdown: `Перекладений коментар ${index + 1}.`
     })),
     warningCodes: raw.warningCodes || []
   };
@@ -67,16 +67,20 @@ function translatedFromRaw(raw, options = {}) {
 function makeConfig(storageDir, overrides = {}) {
   return loadConfig({
     env: {
-      AETRIDDER_API_TOKEN: apiToken,
-      AETRIDDER_DIAGNOSTICS_TOKEN: diagnosticsToken,
-      AETRIDDER_MAX_COMMENTS: String(overrides.maxComments || 1000),
-      AETRIDDER_EXTRACTION_TIMEOUT_MS: "5000",
-      AETRIDDER_TRANSLATION_TIMEOUT_MS: "5000",
-      AETRIDDER_TOTAL_JOB_TIMEOUT_MS: "15000",
-      AETRIDDER_MAX_INPUT_CHARS: "300000",
-      AETRIDDER_MAX_ARTIFACT_BYTES: "10485760",
-      AETRIDDER_REDACTED_LOG_TAIL_BYTES: "32768",
-      AETRIDDER_CODEX_PROCESS_TIMEOUT_MS: "5000"
+      REDDIT_READER_API_TOKEN: apiToken,
+      REDDIT_READER_DIAGNOSTICS_TOKEN: diagnosticsToken,
+      REDDIT_READER_MAX_COMMENTS: String(overrides.maxComments || 1000),
+      REDDIT_READER_EXTRACTION_TIMEOUT_MS: "5000",
+      REDDIT_READER_TRANSLATION_TIMEOUT_MS: "5000",
+      REDDIT_READER_TOTAL_JOB_TIMEOUT_MS: "15000",
+      REDDIT_READER_MAX_INPUT_CHARS: "300000",
+      REDDIT_READER_MAX_ARTIFACT_BYTES: "10485760",
+      REDDIT_READER_MAX_COMMENT_PARTIAL_REQUESTS: String(overrides.maxCommentPartialRequests || 50),
+      REDDIT_READER_MAX_COMMENT_PARTIAL_BYTES: String(overrides.maxCommentPartialBytes || 10485760),
+      REDDIT_READER_COMMENT_PARTIAL_IDLE_MS: String(overrides.commentPartialIdleMs || 0),
+      REDDIT_READER_REDACTED_LOG_TAIL_BYTES: "32768",
+      REDDIT_READER_CODEX_PROCESS_TIMEOUT_MS: "5000",
+      ...(overrides.extraEnv || {})
     },
     storageDir
   });
@@ -123,8 +127,9 @@ async function getJson(baseUrl, route, token = diagnosticsToken) {
   return requestJson(baseUrl, "GET", route, undefined, token);
 }
 
-async function getText(baseUrl, route) {
-  const response = await fetch(`${baseUrl}${route}`);
+async function getText(baseUrl, route, token = null) {
+  const headers = token ? { authorization: `Bearer ${token}` } : undefined;
+  const response = await fetch(`${baseUrl}${route}`, { headers });
   return {
     status: response.status,
     text: await response.text()
@@ -171,4 +176,3 @@ module.exports = {
   waitFor,
   waitForStatus
 };
-

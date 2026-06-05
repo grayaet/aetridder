@@ -1,14 +1,14 @@
 {
   "schemaVersion": "aetridder.translated-thread.v1",
-  "language": "ru",
+  "language": "uk",
   "translatedAt": "2026-06-02T18:01:00.000Z",
   "sourceUrl": "https://www.reddit.com/r/test/comments/demo/english_title/",
   "normalizedUrl": "https://www.reddit.com/r/test/comments/demo/english_title/",
   "finalUrlAfterRedirect": "https://www.reddit.com/r/test/comments/demo/english_title/",
   "post": {
     "id": "t3_demo",
-    "title": "Русский заголовок для проверки",
-    "bodyMarkdown": "Русский текст с **Markdown** и [ссылкой](https://example.com).",
+    "title": "Перекладений заголовок для перевірки",
+    "bodyMarkdown": "Перекладений текст із **Markdown** і [посиланням](https://example.com).",
     "author": "sample_author",
     "authorProfileUrl": "https://www.reddit.com/user/sample_author/",
     "score": "42",
@@ -29,7 +29,7 @@
       "authorProfileUrl": "https://www.reddit.com/user/commenter_one/",
       "score": "7",
       "timestamp": "2026-06-02T17:10:00.000Z",
-      "bodyMarkdown": "Первый русский комментарий.",
+      "bodyMarkdown": "Перший перекладений коментар.",
       "metadata": {
         "subreddit": null,
         "isSubmitter": false,
@@ -45,7 +45,7 @@
       "authorProfileUrl": "https://www.reddit.com/user/commenter_two/",
       "score": "3",
       "timestamp": "2026-06-02T17:12:00.000Z",
-      "bodyMarkdown": "Вложенный русский ответ.",
+      "bodyMarkdown": "Вкладена перекладена відповідь.",
       "metadata": {
         "subreddit": null,
         "isSubmitter": false,
@@ -55,4 +55,3 @@
   ],
   "warningCodes": []
 }
-

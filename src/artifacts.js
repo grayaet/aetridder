@@ -5,6 +5,7 @@ const path = require("node:path");
 const REQUIRED_ARTIFACTS = Object.freeze([
   "reddit-page.html",
   "screenshot.png",
+  "extractor-report.json",
   "thread.raw.json",
   "thread.translated.json",
   "worker.log",
@@ -39,13 +40,21 @@ function safeRemoveDir(rootDir, targetPath) {
 
 function redactText(text, config = {}) {
   let output = String(text || "");
-  const tokens = [config.apiToken, config.diagnosticsToken].filter(Boolean);
+  const tokens = [
+    config.apiToken,
+    config.diagnosticsToken,
+    config.externalExtractorToken,
+    config.localExtractorToken
+  ].filter(Boolean);
   for (const token of tokens) {
     output = output.split(token).join("[REDACTED_TOKEN]");
   }
   output = output.replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]");
   output = output.replace(/https?:\/\/[^\s"'<>]+\/t\/[A-Za-z0-9_-]{20,}/g, "[REDACTED_VIEW_URL]");
   output = output.replace(/D:\\Codex\\_opscontrol\\[^\s"'<>]*/gi, "[REDACTED_LOCAL_TOOL_PATH]");
+  output = output.replace(/(--output-schema|--output-last-message)\s+[^\s"'<>]+/g, "$1 [REDACTED_LOCAL_PATH]");
+  output = output.replace(/[A-Za-z]:\\(?:[^\s"'<>\\]+\\)*[^\s"'<>\\]*/g, "[REDACTED_LOCAL_PATH]");
+  output = output.replace(/\/(?:home|srv|var|tmp)\/[^\s"'<>]*/g, "[REDACTED_LOCAL_PATH]");
   return output;
 }
 
@@ -54,7 +63,7 @@ function limitBytes(bufferOrText, maxBytes) {
   if (buffer.byteLength <= maxBytes) {
     return buffer;
   }
-  const marker = Buffer.from("\n[truncated_by_AETRIDDER_MAX_ARTIFACT_BYTES]\n", "utf8");
+  const marker = Buffer.from("\n[truncated_by_REDDIT_READER_MAX_ARTIFACT_BYTES]\n", "utf8");
   return Buffer.concat([buffer.subarray(0, Math.max(0, maxBytes - marker.byteLength)), marker]);
 }
 
@@ -190,4 +199,3 @@ module.exports = {
   buildArtifactManifest,
   writeManifest
 };
-

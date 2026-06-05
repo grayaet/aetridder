@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "aetridder.translated-thread.schema.json",
-  "title": "Aetridder translated thread",
+  "title": "Reddit Reader translated thread",
   "type": "object",
   "required": ["schemaVersion", "language", "translatedAt", "sourceUrl", "normalizedUrl", "finalUrlAfterRedirect", "post", "comments", "warningCodes"],
   "additionalProperties": false,
   "properties": {
     "schemaVersion": { "type": "string", "const": "aetridder.translated-thread.v1" },
-    "language": { "type": "string", "const": "ru" },
+    "language": { "type": "string" },
     "translatedAt": { "type": "string" },
     "sourceUrl": { "type": "string" },
     "normalizedUrl": { "type": "string" },
@@ -19,7 +19,7 @@
     },
     "warningCodes": {
       "type": "array",
-      "items": { "type": "string", "enum": ["partial_comments", "truncated_comments"] }
+      "items": { "type": "string", "enum": ["partial_comments", "truncated_comments", "partial_translation"] }
     }
   },
   "$defs": {
@@ -29,7 +29,7 @@
       "additionalProperties": false,
       "properties": {
         "id": { "type": "string" },
-        "title": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
         "bodyMarkdown": { "type": "string" },
         "author": { "type": "string" },
         "authorProfileUrl": { "type": ["string", "null"] },
@@ -45,26 +45,37 @@
       "properties": {
         "id": { "type": "string" },
         "parentId": { "type": ["string", "null"] },
-        "order": { "type": "integer", "minimum": 0 },
-        "depth": { "type": "integer", "minimum": 0 },
+        "order": { "type": "integer" },
+        "depth": { "type": "integer" },
         "author": { "type": "string" },
         "authorProfileUrl": { "type": ["string", "null"] },
         "score": { "type": ["string", "number", "null"] },
         "timestamp": { "type": ["string", "null"] },
-        "bodyMarkdown": { "type": "string", "minLength": 1 },
+        "bodyMarkdown": { "type": "string" },
         "metadata": { "$ref": "#/$defs/metadata" }
       }
     },
     "metadata": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["subreddit", "isSubmitter", "extractionSelector"],
+      "required": [
+        "subreddit",
+        "isSubmitter",
+        "extractionSelector",
+        "originalDomId",
+        "parentInferenceSource",
+        "parentInferenceWarning",
+        "duplicateMerge"
+      ],
       "properties": {
         "subreddit": { "type": ["string", "null"] },
         "isSubmitter": { "type": ["boolean", "null"] },
-        "extractionSelector": { "type": ["string", "null"] }
+        "extractionSelector": { "type": ["string", "null"] },
+        "originalDomId": { "type": ["string", "null"] },
+        "parentInferenceSource": { "type": ["string", "null"] },
+        "parentInferenceWarning": { "type": ["string", "null"] },
+        "duplicateMerge": { "type": ["string", "null"] }
       }
     }
   }
 }
-

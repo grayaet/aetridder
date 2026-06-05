@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aetridder.extractor-response.schema.json",
+  "title": "Extractor v1 response",
+  "oneOf": [
+    { "$ref": "#/$defs/success" },
+    { "$ref": "aetridder.extractor-error.schema.json" }
+  ],
+  "$defs": {
+    "success": {
+      "type": "object",
+      "required": ["protocolVersion", "ok", "jobId", "generation", "requestId", "rawThread", "warningCodes", "metrics", "extractor"],
+      "additionalProperties": false,
+      "properties": {
+        "protocolVersion": { "const": "extractor.v1" },
+        "ok": { "const": true },
+        "jobId": { "type": "string", "minLength": 1 },
+        "generation": { "type": "integer", "minimum": 0 },
+        "requestId": { "type": "string", "minLength": 1 },
+        "rawThread": { "$ref": "aetridder.extracted-thread.schema.json" },
+        "warningCodes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "extractor": { "$ref": "#/$defs/extractor" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "visibleCommentCount",
+        "extractedUniqueCommentCount",
+        "discoveredMoreRequestCount",
+        "uniqueMoreRequestCount",
+        "fetchedMoreRequestCount",
+        "failedMoreRequestCount",
+        "unresolvedMoreRequestCount",
+        "partialArtifactsCount"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "visibleCommentCount": { "type": "integer", "minimum": 0 },
+        "extractedUniqueCommentCount": { "type": "integer", "minimum": 0 },
+        "discoveredMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "uniqueMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "fetchedMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "failedMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "unresolvedMoreRequestCount": { "type": "integer", "minimum": 0 },
+        "partialArtifactsCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "extractor": {
+      "type": "object",
+      "required": ["provider", "agentVersion", "startedAt", "endedAt", "browserReady"],
+      "additionalProperties": true,
+      "properties": {
+        "provider": { "type": "string" },
+        "agentVersion": { "type": ["string", "null"] },
+        "startedAt": { "type": "string" },
+        "endedAt": { "type": "string" },
+        "browserReady": { "type": ["boolean", "null"] }
+      }
+    }
+  }
+}

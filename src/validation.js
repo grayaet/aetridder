@@ -7,6 +7,7 @@ const JOB_STATUSES = Object.freeze([
   "ready",
   "ready_with_warning",
   "invalid_url",
+  "extraction_unavailable",
   "reddit_unavailable",
   "extraction_failed",
   "translation_failed",
@@ -20,6 +21,7 @@ const TERMINAL_STATUSES = new Set([
   "ready",
   "ready_with_warning",
   "invalid_url",
+  "extraction_unavailable",
   "reddit_unavailable",
   "extraction_failed",
   "translation_failed",
@@ -42,12 +44,43 @@ function normalizeMetadata(metadata) {
   return {
     subreddit: source.subreddit || null,
     isSubmitter: typeof source.isSubmitter === "boolean" ? source.isSubmitter : null,
-    extractionSelector: source.extractionSelector || null
+    extractionSelector: source.extractionSelector || null,
+    originalDomId: source.originalDomId || null,
+    parentInferenceSource: source.parentInferenceSource || null,
+    parentInferenceWarning: source.parentInferenceWarning || null,
+    duplicateMerge: source.duplicateMerge || null
+  };
+}
+
+function normalizeParserMetrics(metrics) {
+  const source = metrics && typeof metrics === "object" ? metrics : {};
+  const intField = (name) => Number.isSafeInteger(source[name]) && source[name] >= 0 ? source[name] : 0;
+  return {
+    visibleCommentCount: intField("visibleCommentCount"),
+    totalCommentCount: intField("totalCommentCount"),
+    discoveredMoreRequestCount: intField("discoveredMoreRequestCount"),
+    uniqueMoreRequestCount: intField("uniqueMoreRequestCount"),
+    fetchedMoreRequestCount: intField("fetchedMoreRequestCount"),
+    duplicateMoreRequestCount: intField("duplicateMoreRequestCount"),
+    failedMoreRequestCount: intField("failedMoreRequestCount"),
+    unresolvedMoreRequestCount: intField("unresolvedMoreRequestCount"),
+    limitReached: Boolean(source.limitReached),
+    extractedUniqueCommentCount: intField("extractedUniqueCommentCount"),
+    maxDepthExtracted: intField("maxDepthExtracted"),
+    partialArtifactsCount: intField("partialArtifactsCount")
   };
 }
 
 function nonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function expectedTargetLanguageCode(options = {}) {
+  return options.targetLanguageCode || "uk";
+}
+
+function targetLanguageErrorMessage(expected) {
+  return `Translated JSON must declare configured target language ${expected}.`;
 }
 
 function validateExtractedThread(thread, config) {
@@ -107,12 +140,16 @@ function validateExtractedThread(thread, config) {
         metadata: normalizeMetadata(thread.post.metadata)
       },
       comments: normalizedComments,
-      warningCodes: unique(warningCodes)
+      warningCodes: unique(warningCodes),
+      parserMetrics: normalizeParserMetrics(thread.parserMetrics)
     }
   };
 }
 
 function metadataFieldsMatch(translatedItem, rawItem) {
+  if (!translatedItem || !rawItem) {
+    return false;
+  }
   return translatedItem.id === rawItem.id &&
     translatedItem.parentId === rawItem.parentId &&
     translatedItem.order === rawItem.order &&
@@ -123,12 +160,63 @@ function metadataFieldsMatch(translatedItem, rawItem) {
     translatedItem.timestamp === rawItem.timestamp;
 }
 
-function validateTranslatedThread(translated, rawThread) {
-  if (!translated || typeof translated !== "object") {
-    return { ok: false, errorCode: "translated_payload_missing", errorMessageSafe: "Translated JSON is missing." };
+function compactStableFieldsMatch(translatedItem, rawItem) {
+  if (!translatedItem || !rawItem || translatedItem.id !== rawItem.id) {
+    return false;
   }
-  if (translated.language !== "ru") {
-    return { ok: false, errorCode: "translated_language_not_ru", errorMessageSafe: "Translated JSON must declare Russian output." };
+  if (translatedItem.parentId !== undefined && translatedItem.parentId !== rawItem.parentId) {
+    return false;
+  }
+  if (translatedItem.order !== undefined && translatedItem.order !== rawItem.order) {
+    return false;
+  }
+  if (translatedItem.depth !== undefined && translatedItem.depth !== rawItem.depth) {
+    return false;
+  }
+  return true;
+}
+
+function rehydrateTranslatedPost(translated, rawThread) {
+  if (!translated || !translated.post || metadataFieldsMatch(translated.post, rawThread.post)) {
+    return translated;
+  }
+  if (!compactStableFieldsMatch(translated.post, rawThread.post)) {
+    return translated;
+  }
+  return {
+    ...translated,
+    post: {
+      ...rawThread.post,
+      title: String(translated.post.title || ""),
+      bodyMarkdown: String(translated.post.bodyMarkdown || "")
+    }
+  };
+}
+
+function rehydrateTranslatedComments(translatedComments, rawComments) {
+  return translatedComments.map((comment, index) => {
+    const rawComment = rawComments[index];
+    if (!comment || metadataFieldsMatch(comment, rawComment)) {
+      return comment;
+    }
+    if (!compactStableFieldsMatch(comment, rawComment)) {
+      return comment;
+    }
+    return {
+      ...rawComment,
+      bodyMarkdown: String(comment.bodyMarkdown || "")
+    };
+  });
+}
+
+function validateTranslatedPost(translated, rawThread, options = {}) {
+  translated = rehydrateTranslatedPost(translated, rawThread);
+  const expectedLanguage = expectedTargetLanguageCode(options);
+  if (!translated || typeof translated !== "object") {
+    return { ok: false, errorCode: "translated_post_missing", errorMessageSafe: "Translated post JSON is missing." };
+  }
+  if (translated.language !== expectedLanguage) {
+    return { ok: false, errorCode: "translated_language_mismatch", errorMessageSafe: targetLanguageErrorMessage(expectedLanguage) };
   }
   if (!translated.post || !nonEmptyString(translated.post.title)) {
     return { ok: false, errorCode: "translated_title_missing", errorMessageSafe: "Translated post title is missing." };
@@ -137,12 +225,88 @@ function validateTranslatedThread(translated, rawThread) {
     return { ok: false, errorCode: "post_metadata_mismatch", errorMessageSafe: "Translated post metadata does not match extraction metadata." };
   }
 
-  const translatedComments = asArray(translated.comments);
-  if (translatedComments.length !== rawThread.comments.length) {
+  return {
+    ok: true,
+    post: {
+      ...rawThread.post,
+      title: String(translated.post.title),
+      bodyMarkdown: String(translated.post.bodyMarkdown || "")
+    },
+    warningCodes: unique([...(rawThread.warningCodes || []), ...(translated.warningCodes || [])])
+  };
+}
+
+function validateTranslatedCommentBatch(translated, rawComments, batchIndex, totalBatches, options = {}) {
+  const expectedLanguage = expectedTargetLanguageCode(options);
+  if (!translated || typeof translated !== "object") {
+    return { ok: false, errorCode: "translated_batch_missing", errorMessageSafe: "Translated comment batch JSON is missing." };
+  }
+  if (translated.language !== expectedLanguage) {
+    return { ok: false, errorCode: "translated_language_mismatch", errorMessageSafe: targetLanguageErrorMessage(expectedLanguage) };
+  }
+  if (translated.batchIndex !== batchIndex || translated.totalBatches !== totalBatches) {
+    return { ok: false, errorCode: "batch_metadata_mismatch", errorMessageSafe: "Translated comment batch metadata does not match the requested batch." };
+  }
+
+  const translatedComments = rehydrateTranslatedComments(asArray(translated.comments), rawComments);
+  if (translatedComments.length !== rawComments.length) {
+    return { ok: false, errorCode: "batch_comment_count_mismatch", errorMessageSafe: "Translated comment batch count does not match the requested batch." };
+  }
+
+  for (let index = 0; index < rawComments.length; index += 1) {
+    const translatedComment = translatedComments[index];
+    const rawComment = rawComments[index];
+    if (!translatedComment || !metadataFieldsMatch(translatedComment, rawComment)) {
+      return {
+        ok: false,
+        errorCode: "batch_comment_metadata_mismatch",
+        errorMessageSafe: "Translated comment batch metadata does not match extraction metadata."
+      };
+    }
+    if (!nonEmptyString(translatedComment.bodyMarkdown)) {
+      return {
+        ok: false,
+        errorCode: "comment_translation_missing",
+        errorMessageSafe: "A translated comment body is missing."
+      };
+    }
+  }
+
+  return {
+    ok: true,
+    comments: translatedComments.map((comment, index) => ({
+      ...rawComments[index],
+      bodyMarkdown: String(comment.bodyMarkdown || "")
+    })),
+    warningCodes: unique(asArray(translated.warningCodes))
+  };
+}
+
+function validateTranslatedThread(translated, rawThread, options = {}) {
+  translated = rehydrateTranslatedPost(translated, rawThread);
+  const expectedLanguage = expectedTargetLanguageCode(options);
+  if (!translated || typeof translated !== "object") {
+    return { ok: false, errorCode: "translated_payload_missing", errorMessageSafe: "Translated JSON is missing." };
+  }
+  if (translated.language !== expectedLanguage) {
+    return { ok: false, errorCode: "translated_language_mismatch", errorMessageSafe: targetLanguageErrorMessage(expectedLanguage) };
+  }
+  if (!translated.post || !nonEmptyString(translated.post.title)) {
+    return { ok: false, errorCode: "translated_title_missing", errorMessageSafe: "Translated post title is missing." };
+  }
+  if (!metadataFieldsMatch(translated.post, rawThread.post)) {
+    return { ok: false, errorCode: "post_metadata_mismatch", errorMessageSafe: "Translated post metadata does not match extraction metadata." };
+  }
+
+  const translatedComments = rehydrateTranslatedComments(asArray(translated.comments), rawThread.comments);
+  if (!options.allowPartialComments && translatedComments.length !== rawThread.comments.length) {
+    return { ok: false, errorCode: "comment_count_mismatch", errorMessageSafe: "Translated comments do not match extracted comments." };
+  }
+  if (options.allowPartialComments && translatedComments.length > rawThread.comments.length) {
     return { ok: false, errorCode: "comment_count_mismatch", errorMessageSafe: "Translated comments do not match extracted comments." };
   }
 
-  for (let index = 0; index < rawThread.comments.length; index += 1) {
+  for (let index = 0; index < translatedComments.length; index += 1) {
     const translatedComment = translatedComments[index];
     const rawComment = rawThread.comments[index];
     if (!translatedComment || !metadataFieldsMatch(translatedComment, rawComment)) {
@@ -165,7 +329,7 @@ function validateTranslatedThread(translated, rawThread) {
     ok: true,
     thread: {
       schemaVersion: "aetridder.translated-thread.v1",
-      language: "ru",
+      language: expectedLanguage,
       translatedAt: translated.translatedAt || new Date().toISOString(),
       sourceUrl: rawThread.sourceUrl,
       normalizedUrl: rawThread.normalizedUrl,
@@ -179,7 +343,11 @@ function validateTranslatedThread(translated, rawThread) {
         ...rawThread.comments[index],
         bodyMarkdown: String(comment.bodyMarkdown || "")
       })),
-      warningCodes: unique([...(rawThread.warningCodes || []), ...(translated.warningCodes || [])])
+      warningCodes: unique([
+        ...(rawThread.warningCodes || []),
+        ...(translated.warningCodes || []),
+        ...(options.allowPartialComments && translatedComments.length < rawThread.comments.length ? ["partial_translation"] : [])
+      ])
     }
   };
 }
@@ -191,7 +359,8 @@ function isTerminalStatus(status) {
 module.exports = {
   JOB_STATUSES,
   validateExtractedThread,
+  validateTranslatedPost,
+  validateTranslatedCommentBatch,
   validateTranslatedThread,
   isTerminalStatus
 };
-

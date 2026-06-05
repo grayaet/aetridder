@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aetridder.translated-post.schema.json",
+  "title": "Reddit Reader translated post",
+  "type": "object",
+  "required": ["schemaVersion", "language", "translatedAt", "post", "warningCodes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "aetridder.translated-post.v1" },
+    "language": { "type": "string" },
+    "translatedAt": { "type": "string" },
+    "post": { "$ref": "#/$defs/post" },
+    "warningCodes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["partial_comments", "truncated_comments", "partial_translation"] }
+    }
+  },
+  "$defs": {
+    "post": {
+      "type": "object",
+      "required": ["id", "title", "bodyMarkdown"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "bodyMarkdown": { "type": "string" }
+      }
+    }
+  }
+}

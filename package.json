@@ -1,10 +1,11 @@
 {
   "name": "aetridder",
   "version": "1.0.0",
-  "description": "Private single-user Reddit thread reader with Russian translation and mobile rendering.",
+  "description": "Private Reddit thread reader that translates public threads into a configurable native language for fluent reading.",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "start:extractor-agent": "node src/extractor-agent.js",
     "test": "node --test tests/*.test.js",
     "test:fixtures": "node --test tests/url.test.js tests/lifecycle.test.js tests/worker-fixtures.test.js tests/renderer.test.js tests/diagnostics.test.js",
     "test:extractor:fixture": "node --test tests/extractor-fixture.test.js",

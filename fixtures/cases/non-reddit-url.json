@@ -6,4 +6,3 @@
   "expectedStatus": 400,
   "expectedErrorCode": "non_reddit_url"
 }
-
